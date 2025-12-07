@@ -203,7 +203,7 @@ const FboAnimation = () => {
                 </RotatingScene>
             </Suspense>
 
-            {!isMobile && <OrbitControls enableZoom={true} enablePan={false} />}
+            {!isMobile && <OrbitControls enableZoom={false} enablePan={false} />}
         </Canvas>
     );
 };

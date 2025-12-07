@@ -1,29 +1,3 @@
-// import glslCurlNoise from './glslCurlNoise.js';
-
-// const fragmentShader = `
-
-// uniform sampler2D positions;
-// uniform float uTime;
-// uniform float uFrequency;
-
-// varying vec2 vUv;
-
-// ${glslCurlNoise}
-// void main() {
-//     vec3 pos = texture2D(positions, vUv).rgb;
-//     vec3 curlPos = texture2D(positions, vUv).rgb;
-
-//     pos = curlNoise(pos * uFrequency + uTime * 0.1);
-//     curlPos = curlNoise(curlPos * uFrequency + uTime * 0.1);
-    
-//     curlPos += curlNoise(curlPos * uFrequency * 2.0) * 0.5;
-
-//     gl_FragColor = vec4(mix(pos, curlPos, sin(uTime)), 1.0);
-// }
-// `
-
-// export default fragmentShader
-
 import glslCurlNoise from './glslCurlNoise.js';
 
 const fragmentShader = `
@@ -31,26 +5,52 @@ const fragmentShader = `
 uniform sampler2D positions;
 uniform float uTime;
 uniform float uFrequency;
+uniform vec2 uMouse;
 
 varying vec2 vUv;
 
 ${glslCurlNoise}
 
 void main() {
-    // 1. Read the current position of the particle
+    // --- SETTINGS ---
+    float wiggleSpeed = 0.1;      // How fast they wiggle
+    float wiggleAmp = 0.3;       // How far they wiggle (Try 0.1 if too subtle)
+    float mouseRadius = 0.6;      // How big the mouse push is
+    float mouseStrength = 0.6;    // How hard the mouse pushes
+    float viewScale = 4.0;        // Multiplier to match mouse to world size
+    // ----------------
+    
+    // 1. Get current position
     vec3 pos = texture2D(positions, vUv).rgb;
 
-    // 2. Calculate the flow direction (Curl Noise) at this position
-    // We multiply by frequency to control the "zoom" of the noise
-    vec3 noise = curlNoise(pos * uFrequency + uTime * 0.1);
+    // 2. Wiggle Effect
+    // We mix the static position with the noise so they don't fly away
+    vec3 noise = curlNoise(pos * uFrequency + uTime * wiggleSpeed);
+    vec3 targetPos = pos + (noise * wiggleAmp);
 
-    // 3. Add the noise to the current position to move it
-    // IMPORTANT: The multiplier (0.005) is the speed. 
-    // Keep this very small so the model doesn't melt away instantly.
-    vec3 newPos = pos + (noise * 0.005);
+    // 3. Mouse Interaction
+    // Scale the mouse from Screen Space (-1 to 1) to World Space
+    vec2 mouseWorld = uMouse * viewScale;
+    
+    // Flip X because your model is rotated 180 degrees
+    vec3 mousePos = vec3(-mouseWorld.x, mouseWorld.y, 0.0);
+    
+    // Calculate distance (ignoring Z depth)
+    float dist = distance(targetPos.xy, mousePos.xy);
+    
+    vec3 finalPos = targetPos;
 
-    gl_FragColor = vec4(newPos, 1.0);
+    if (dist < mouseRadius) {
+        // Push away from mouse
+        vec3 repulseDir = normalize(targetPos - mousePos);
+        float force = 1.0 - (dist / mouseRadius); // Stronger in center
+        finalPos += repulseDir * force * mouseStrength;
+    }
+
+    gl_FragColor = vec4(finalPos, 1.0);
 }
 `
 
-export default fragmentShader
+export default fragmentShader;
+
+

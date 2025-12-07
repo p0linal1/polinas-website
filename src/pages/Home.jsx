@@ -1,5 +1,6 @@
 import { ThemeToggle } from "../components/ThemeToggle";
 import FBO from "../components/FBO";
+import { Navbar } from "../components/Navbar";
 
 export const Home = () => {
     return (
@@ -15,11 +16,10 @@ export const Home = () => {
             </div>
 
             {/*Navbar */}
-
+            <Navbar/>
 
             {/*Main content */}
 
-            
             {/*Footer */}
 
         </div>
